@@ -1,0 +1,17 @@
+{
+  "name": "recipe-calculator",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "build": "npm run clean && tsc",
+    "start": "node dist/main.js",
+    "clean": "rimraf dist"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "rimraf": "^6.1.2",
+    "typescript": "^5.9.3"
+  }
+}
