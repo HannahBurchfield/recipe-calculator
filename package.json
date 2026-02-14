@@ -6,12 +6,14 @@
   "scripts": {
     "build": "npm run clean && tsc",
     "start": "node dist/main.js",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "vitest run"
   },
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^25.2.3",
     "rimraf": "^6.1.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }
