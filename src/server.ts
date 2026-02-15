@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RecipeBook } from './types/index.js';
-import { resolveChain, integerize, getThroughput } from './api/index.js';
+import { resolveChain, integerize, getThroughput, buildProductionGraph } from './api/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(__dirname, '..', 'data');
@@ -111,6 +111,17 @@ app.post('/api/throughput', (req, res) => {
     if (Math.abs(t) > 1e-9) result[product.name] = t;
   }
   res.json(result);
+});
+
+// Full production graph for a book
+app.get('/api/graph/:name', (req, res) => {
+  const books = readBooks();
+  const book = books[req.params.name];
+  if (!book) {
+    res.status(404).json({ error: 'Book not found' });
+    return;
+  }
+  res.json(buildProductionGraph(book));
 });
 
 const PORT = parseInt(process.env['PORT'] ?? '3000', 10);
