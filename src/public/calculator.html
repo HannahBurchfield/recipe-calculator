@@ -30,14 +30,14 @@
   </style>
 </head>
 <body>
-  <nav style="margin-bottom:1rem"><a href="/">Editor</a> | <strong>Calculator</strong> | <a href="/graph.html">Graph</a></nav>
+  <nav style="margin-bottom:1rem"><a href="index.html">Editor</a> | <strong>Calculator</strong> | <a href="graph.html">Graph</a></nav>
   <h1>Production Calculator</h1>
 
   <section>
     <div class="row">
       <label>Book:</label>
       <select id="bookSelect"><option value="">-- select --</option></select>
-      <button onclick="loadBook()">Load</button>
+      <button id="loadBtn">Load</button>
     </div>
     <div class="row">
       <label>Target product:</label>
@@ -48,12 +48,12 @@
       <input id="throughput" type="number" min="0.01" step="0.01" value="1" style="width:100px">
     </div>
     <div class="row">
-      <button class="primary" onclick="resolve()">Resolve Chain</button>
-      <button onclick="integerize()">Integerize</button>
+      <button class="primary" id="resolveBtn">Resolve Chain</button>
+      <button id="integerizeBtn">Integerize</button>
     </div>
     <div class="row">
       <label>Layout:</label>
-      <select id="layoutSelect" onchange="relayout()">
+      <select id="layoutSelect">
         <option value="cose">Physics</option>
         <option value="breadthfirst">Hierarchical</option>
       </select>
@@ -72,7 +72,9 @@
     </details>
   </section>
 
-  <script>
+  <script type="module">
+    import { resolveChain, integerize, getThroughput } from './engine.js';
+
     let currentBook = null;
     let lastChain = null;
     let cy = null;
@@ -192,17 +194,18 @@
       cy.layout(getLayoutOptions()).run();
     }
 
+    let presetBooks = {};
+
     async function refreshBookList() {
-      let serverNames = [];
       try {
-        const res = await fetch('/api/books');
-        serverNames = await res.json();
-      } catch {}
+        const res = await fetch('data/books.json');
+        presetBooks = await res.json();
+      } catch { presetBooks = {}; }
       const localBooks = getLocalBooks();
 
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
-      for (const n of serverNames) {
+      for (const n of Object.keys(presetBooks)) {
         const opt = document.createElement('option');
         opt.value = `preset:${n}`;
         opt.textContent = `${n} (preset)`;
@@ -228,9 +231,8 @@
       if (!sel) return;
 
       if (sel.source === 'preset') {
-        const res = await fetch(`/api/books/${encodeURIComponent(sel.name)}`);
-        if (!res.ok) { setOutput('Book not found.'); return; }
-        currentBook = await res.json();
+        currentBook = presetBooks[sel.name];
+        if (!currentBook) { setOutput('Book not found.'); return; }
       } else {
         currentBook = getLocalBooks()[sel.name];
         if (!currentBook) { setOutput('Book not found.'); return; }
@@ -247,36 +249,26 @@
       setOutput(`Loaded "${sel.name}" — ${currentBook.products.length} products, ${currentBook.recipes.length} recipes.`);
     }
 
-    async function resolve() {
+    function resolve() {
       const productName = document.getElementById('productSelect').value;
       if (!currentBook || !productName) { setOutput('Select a book and product first.'); return; }
       const throughput = parseFloat(document.getElementById('throughput').value) || undefined;
+      const product = currentBook.products.find(p => p.name === productName);
+      if (!product) { setOutput('Product not found.'); return; }
 
-      const res = await fetch('/api/resolve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ book: currentBook, productName, throughput }),
-      });
-      if (!res.ok) { setOutput('Error: ' + (await res.json()).error); return; }
-      lastChain = await res.json();
+      lastChain = resolveChain(currentBook, product, throughput);
       renderGraph(lastChain);
-      await displayChain(lastChain, `Resolved chain for ${productName}` + (throughput ? ` @ ${throughput}/s` : ''));
+      displayChain(lastChain, `Resolved chain for ${productName}` + (throughput ? ` @ ${throughput}/s` : ''));
     }
 
-    async function integerize() {
+    function doIntegerize() {
       if (!lastChain) { setOutput('Resolve a chain first.'); return; }
-      const res = await fetch('/api/integerize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(lastChain),
-      });
-      if (!res.ok) { setOutput('Error integerizing.'); return; }
-      lastChain = await res.json();
+      lastChain = integerize(lastChain);
       renderGraph(lastChain);
-      await displayChain(lastChain, 'Integerized chain');
+      displayChain(lastChain, 'Integerized chain');
     }
 
-    async function displayChain(chain, title) {
+    function displayChain(chain, title) {
       let html = `<span class="section-header">=== ${esc(title)} ===</span>\n\n`;
 
       html += `<span class="section-header">Constructors:</span>\n`;
@@ -293,19 +285,16 @@
         html += `<span class="edge-line">  ${esc(edge.from.recipe.name)} → ${esc(edge.to.recipe.name)}  (${esc(edge.product.name)})</span>\n`;
       }
 
-      const tRes = await fetch('/api/throughput', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chain, book: currentBook }),
-      });
-      if (tRes.ok) {
-        const throughputs = await tRes.json();
-        html += `\n<span class="section-header">Net throughput (items/s):</span>\n`;
-        for (const [name, rate] of Object.entries(throughputs)) {
-          const cls = rate > 0 ? 'throughput-pos' : 'throughput-neg';
-          const sign = rate > 0 ? '+' : '';
-          html += `<span class="${cls}">  ${esc(name)}: ${sign}${Number(rate).toFixed(4)}/s</span>\n`;
-        }
+      const throughputs = {};
+      for (const product of currentBook.products) {
+        const t = getThroughput(chain, product);
+        if (Math.abs(t) > 1e-9) throughputs[product.name] = t;
+      }
+      html += `\n<span class="section-header">Net throughput (items/s):</span>\n`;
+      for (const [name, rate] of Object.entries(throughputs)) {
+        const cls = rate > 0 ? 'throughput-pos' : 'throughput-neg';
+        const sign = rate > 0 ? '+' : '';
+        html += `<span class="${cls}">  ${esc(name)}: ${sign}${Number(rate).toFixed(4)}/s</span>\n`;
       }
 
       document.getElementById('output').innerHTML = html;
@@ -320,6 +309,11 @@
       d.textContent = s;
       return d.innerHTML;
     }
+
+    document.getElementById('loadBtn').addEventListener('click', loadBook);
+    document.getElementById('resolveBtn').addEventListener('click', resolve);
+    document.getElementById('integerizeBtn').addEventListener('click', doIntegerize);
+    document.getElementById('layoutSelect').addEventListener('change', relayout);
 
     refreshBookList();
     initGraph();

@@ -4,14 +4,14 @@ Factory/production chain calculator. Define products and recipes (with input/out
 
 ## Commands
 ```bash
-npm run build     # clean + tsc + copy static files to dist/
-npm start         # Express server on :3000
+npm run build     # clean + tsc + bundle engine.js + copy static files to dist/public/
+npm run serve     # serve dist/public/ locally (npx serve)
 npm test          # vitest run
 ```
 
 ## Architecture
 
-**TypeScript, ESM modules, Express 5.** All internal imports use `.js` extensions (NodeNext resolution). Static HTML frontend served from `src/public/` (copied to `dist/public/` at build time). No bundler — Cytoscape.js loaded from CDN.
+**Fully static site.** TypeScript, ESM modules. All computation runs in the browser via `engine.js` (bundled by esbuild from `src/api/`). Preset books served as static JSON from `data/books.json`. User books stored in localStorage. Deployed to GitHub Pages via `.github/workflows/pages.yml`.
 
 ### Types (`src/types/`)
 - `Product`, `ItemStack`, `Recipe`, `RecipeBook` — core domain
@@ -19,19 +19,18 @@ npm test          # vitest run
 - `GraphEdge`, `ProductionGraph` — full recipe book graph with `ratio: [number, number]`
 
 ### API (`src/api/`)
+Pure computation functions, no server dependencies. Bundled to `dist/public/engine.js` for browser use.
 - `findRecipesFor(book, product)` — filter recipes producing a product
 - `resolveChain(book, product, throughput?)` — recursive DFS to build production chain with constructor counts
 - `integerize(chain)` — scale fractional counts to integers (brute-force scalar k=1..1000)
 - `getThroughput(chain, product)` — net production rate (production minus consumption)
 - `buildProductionGraph(book)` — full graph of all recipes with reduced A:B constructor ratios
-
-### Server (`src/server.ts`)
-REST API over recipe books stored in `data/books.json`. Key endpoints: CRUD on `/api/books/:name`, `POST /api/resolve`, `POST /api/integerize`, `GET /api/graph/:name`.
+- `browser-entry.ts` — esbuild entry point re-exporting all public functions
 
 ### Frontend (`src/public/`)
 - `index.html` — Recipe book editor (create products, define recipes)
-- `calculator.html` — Resolve production chains, visualize with Cytoscape
-- `graph.html` — Full production graph of all recipes with ratio-labeled edges
+- `calculator.html` — Resolve production chains, visualize with Cytoscape (imports engine.js)
+- `graph.html` — Full production graph of all recipes with ratio-labeled edges (imports engine.js)
 
 ### Tests (`src/__tests__/`)
 Vitest. Shared fixtures in `fixtures.ts` with `simpleBook` (widget→cog→motor) and `awkwardBook` (fractional ratios).
@@ -40,5 +39,5 @@ Vitest. Shared fixtures in `fixtures.ts` with `simpleBook` (widget→cog→motor
 
 - **Match by recipe name, not object reference.** After cloning/rebuilding nodes (e.g. in `integerize`), `Map` keyed on original node references breaks. Recipe name is the stable key.
 - **Float arithmetic breaks GCD.** Durations like `3.3333` (representing 10/3) produce huge numerators when multiplied. Fix: brute-force a small scalar k where `a*k` and `b*k` are both near-integers, then round and reduce. Same pattern used in both `integerize` and `buildProductionGraph`.
-- **Express static serves from disk each request** but you still need to rebuild (`npm run build`) for changes to reach `dist/`. The `copy-public` script handles static files.
+- **Rebuild for changes to reach `dist/`.** The build pipeline: tsc → copy-public → esbuild bundle → copy data.
 - **Cytoscape edge labels** need `text-wrap: 'wrap'`, `text-max-width` set generously, and `text-overflow-wrap: 'anywhere'` to avoid clipping on canvas.

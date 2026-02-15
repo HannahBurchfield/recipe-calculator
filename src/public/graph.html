@@ -21,18 +21,18 @@
   </style>
 </head>
 <body>
-  <nav style="margin-bottom:1rem"><a href="/">Editor</a> | <a href="/calculator.html">Calculator</a> | <strong>Graph</strong></nav>
+  <nav style="margin-bottom:1rem"><a href="index.html">Editor</a> | <a href="calculator.html">Calculator</a> | <strong>Graph</strong></nav>
   <h1>Production Graph</h1>
 
   <section>
     <div class="row">
       <label>Book:</label>
       <select id="bookSelect"><option value="">-- select --</option></select>
-      <button class="primary" onclick="loadGraph()">Load</button>
+      <button class="primary" id="loadBtn">Load</button>
     </div>
     <div class="row">
       <label>Layout:</label>
-      <select id="layoutSelect" onchange="relayout()">
+      <select id="layoutSelect">
         <option value="cose">Physics</option>
         <option value="breadthfirst">Hierarchical</option>
       </select>
@@ -43,7 +43,9 @@
     <div id="graph"></div>
   </section>
 
-  <script>
+  <script type="module">
+    import { buildProductionGraph } from './engine.js';
+
     let cy = null;
 
     // --- localStorage helpers ---
@@ -168,17 +170,18 @@
       cy.layout(getLayoutOptions()).run();
     }
 
+    let presetBooks = {};
+
     async function refreshBookList() {
-      let serverNames = [];
       try {
-        const res = await fetch('/api/books');
-        serverNames = await res.json();
-      } catch {}
+        const res = await fetch('data/books.json');
+        presetBooks = await res.json();
+      } catch { presetBooks = {}; }
       const localBooks = getLocalBooks();
 
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
-      for (const n of serverNames) {
+      for (const n of Object.keys(presetBooks)) {
         const opt = document.createElement('option');
         opt.value = `preset:${n}`;
         opt.textContent = `${n} (preset)`;
@@ -199,33 +202,24 @@
       return { source, name: rest.join(':') };
     }
 
-    async function loadGraph() {
+    function loadGraph() {
       const sel = parseSelection();
       if (!sel) return;
 
       let book;
       if (sel.source === 'preset') {
-        // Use GET endpoint for presets
-        const res = await fetch(`/api/graph/${encodeURIComponent(sel.name)}`);
-        if (!res.ok) return;
-        const graph = await res.json();
-        renderGraph(graph);
-        return;
+        book = presetBooks[sel.name];
       } else {
         book = getLocalBooks()[sel.name];
-        if (!book) return;
       }
+      if (!book) return;
 
-      // POST book data for local books
-      const res = await fetch('/api/graph', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(book),
-      });
-      if (!res.ok) return;
-      const graph = await res.json();
+      const graph = buildProductionGraph(book);
       renderGraph(graph);
     }
+
+    document.getElementById('loadBtn').addEventListener('click', loadGraph);
+    document.getElementById('layoutSelect').addEventListener('change', relayout);
 
     refreshBookList();
     initGraph();

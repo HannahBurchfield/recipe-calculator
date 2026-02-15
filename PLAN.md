@@ -1,43 +1,57 @@
-# Client-Side Storage — Implementation Plan
+# Static Site Port — Implementation Plan
 
 ## Overview
-Move user recipe book storage to `localStorage` so the server stores nothing per-user. Server provides read-only preset books; write endpoints are localhost-only for admin use.
+Eliminate the Express server by bundling computation logic for the browser and loading preset books as static JSON. Enables GitHub Pages deployment with zero server infrastructure.
 
 ## Out of Scope
-- Authentication / user accounts
-- Import/export of books (could add later)
-- Any changes to the computation endpoints (resolve, integerize, graph, throughput)
+- Changing computation logic (resolveChain, integerize, etc.)
+- Changing localStorage book storage (already client-side)
+- Import/export features
 
-## Phase 1: Localhost-only write endpoints
+## Phase 1: Add esbuild, create browser bundle
 ### Changes
-- `src/server.ts`: Add middleware guard on `POST /api/books/:name` and `DELETE /api/books/:name` that rejects non-localhost requests (check `req.ip` / `req.hostname` against `127.0.0.1`, `::1`, `localhost`)
+- `package.json`: Add `esbuild` as devDependency, add `bundle` script that builds `src/api/index.ts` → `dist/public/engine.js` as an IIFE exposing `RecipeEngine` global (or ESM — the HTML `<script>` tags can use `type="module"`)
+- `tsconfig.json`: No changes needed — API code is already pure TS with no Node APIs
+- `src/api/browser-entry.ts`: New file — imports and re-exports `resolveChain`, `integerize`, `getThroughput`, `buildProductionGraph` for the bundle entry point
+- Update `build` script: `npm run clean && tsc && npm run copy-public && npm run bundle`
 
 ### Verification
-- [ ] `curl -X POST localhost:3000/api/books/test ...` still works
-- [ ] Requests from non-localhost IPs get 403
+- [ ] `npm run build` produces `dist/public/engine.js`
+- [ ] `npm test` still passes (no changes to logic)
 
-## Phase 2: localStorage book storage
+## Phase 2: Port index.html (editor)
 ### Changes
-- `src/public/index.html` (editor): Replace all `/api/books` save/delete calls with `localStorage` get/set/remove. Load still fetches preset list from server, but saves go to browser only.
-- `src/public/calculator.html`: Book loading merges server presets + localStorage books into the dropdown
-- `src/public/graph.html`: Same merge for book dropdown
-
-All three pages need a shared pattern:
-- `getLocalBooks(): Record<string, RecipeBook>` — parse from `localStorage.getItem('books')`
-- `saveLocalBook(name, book)` / `deleteLocalBook(name)` — update localStorage
-- `refreshBookList()` — fetch `/api/books` for presets, merge with local books, populate dropdown (mark preset vs local)
+- `src/public/index.html`: Replace `fetch('/api/books')` preset list with `fetch('data/books.json')` → parse JSON → `Object.keys()`. Replace `fetch('/api/books/${name}')` with indexing into the fetched books object. Remove all server write calls (already using localStorage). Fix nav links to use relative paths (e.g. `calculator.html` not `/calculator.html`).
 
 ### Verification
-- [ ] Create a book in editor, refresh — it persists from localStorage
-- [ ] Preset books appear in all three pages
-- [ ] Calculator and graph can load both preset and local books
+- [ ] Editor loads preset books from static JSON
+- [ ] Save/load/delete still work via localStorage
+- [ ] Nav links work without Express routing
 
-## Phase 3: Preset book UX
+## Phase 3: Port calculator.html
 ### Changes
-- `src/public/index.html`: When a preset book is loaded, disable save/delete buttons and show "(preset)" label. Add a "Duplicate" button that copies it into localStorage under a new name for editing.
-- `src/public/calculator.html`, `src/public/graph.html`: Label preset vs local books in dropdown (e.g. "rogue-factory (preset)" vs "my-book")
+- `src/public/calculator.html`: Add `<script src="engine.js">` (or `type="module"` import). Replace `fetch('/api/resolve')` with direct `RecipeEngine.resolveChain(book, product, throughput)` call. Replace `fetch('/api/integerize')` with `RecipeEngine.integerize(chain)`. Replace `fetch('/api/throughput')` with `RecipeEngine.getThroughput(chain, product)` loop. Replace preset book loading same as Phase 2. Fix nav links.
 
 ### Verification
-- [ ] Preset books are not editable in the editor
-- [ ] Duplicating a preset creates a local editable copy
-- [ ] Dropdown labels distinguish preset from local books
+- [ ] Resolve/integerize/throughput work without server
+- [ ] Graph renders correctly
+- [ ] Both preset and local books work
+
+## Phase 4: Port graph.html
+### Changes
+- `src/public/graph.html`: Add engine script. Replace `fetch('/api/graph/...')` and `fetch('/api/graph', POST)` with direct `RecipeEngine.buildProductionGraph(book)` call. Replace preset book loading same as Phase 2. Fix nav links.
+
+### Verification
+- [ ] Production graph renders for both preset and local books
+
+## Phase 5: Clean up, update build & deploy
+### Changes
+- `package.json`: Remove `express` dependency and `@types/express` devDependency. Remove/rename `start` script. Update `build` to only produce static output.
+- `src/server.ts`: Delete (or move to a `server/` dir if we want to keep it for local dev — user preference)
+- `.github/workflows/pages.yml`: Update to copy `data/` into `dist/public/data/` so preset books are served alongside HTML
+- `CLAUDE.md`: Update architecture notes
+
+### Verification
+- [ ] `npm run build` produces a self-contained `dist/public/` directory
+- [ ] Opening `dist/public/index.html` via a local file server works end-to-end
+- [ ] GitHub Pages workflow deploys correctly

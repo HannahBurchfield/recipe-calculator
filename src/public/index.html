@@ -34,7 +34,7 @@
   </style>
 </head>
 <body>
-  <nav style="margin-bottom:1rem"><strong>Editor</strong> | <a href="/calculator.html">Calculator</a> | <a href="/graph.html">Graph</a></nav>
+  <nav style="margin-bottom:1rem"><strong>Editor</strong> | <a href="calculator.html">Calculator</a> | <a href="graph.html">Graph</a></nav>
   <h1>Recipe Calculator</h1>
 
   <!-- Book management -->
@@ -110,21 +110,22 @@
 
     // --- Book management ---
 
+    let presetBooks = {};
+
     async function refreshBookList() {
-      // Fetch preset books from server
-      let serverNames = [];
+      // Fetch preset books from static JSON
       try {
-        const res = await fetch('/api/books');
-        serverNames = await res.json();
-      } catch {}
-      presetNames = new Set(serverNames);
+        const res = await fetch('data/books.json');
+        presetBooks = await res.json();
+      } catch { presetBooks = {}; }
+      presetNames = new Set(Object.keys(presetBooks));
 
       const localBooks = getLocalBooks();
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
 
       // Presets first
-      for (const n of serverNames) {
+      for (const n of Object.keys(presetBooks)) {
         const opt = document.createElement('option');
         opt.value = `preset:${n}`;
         opt.textContent = `${n} (preset)`;
@@ -152,9 +153,8 @@
 
       let book;
       if (sel.source === 'preset') {
-        const res = await fetch(`/api/books/${encodeURIComponent(sel.name)}`);
-        if (!res.ok) { status('Book not found'); return; }
-        book = await res.json();
+        book = presetBooks[sel.name];
+        if (!book) { status('Book not found'); return; }
         isPreset = true;
       } else {
         book = getLocalBooks()[sel.name];

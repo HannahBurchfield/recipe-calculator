@@ -30,13 +30,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Prepare pages artifact
-        run: |
-          mkdir -p _site
-          cp -r dist/public/* _site/
-          cp -r data _site/data
-
       - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/public
 
       - id: deployment
         uses: actions/deploy-pages@v4

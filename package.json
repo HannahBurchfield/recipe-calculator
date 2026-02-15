@@ -4,22 +4,20 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "npm run clean && tsc && npm run copy-public",
+    "build": "npm run clean && tsc && npm run copy-public && npm run bundle && npm run copy-data",
     "copy-public": "cp -r src/public dist/public",
-    "start": "node dist/server.js",
-    "demo": "node dist/main.js",
+    "bundle": "esbuild dist/api/browser-entry.js --bundle --format=esm --outfile=dist/public/engine.js",
+    "copy-data": "cp -r data dist/public/data",
+    "serve": "npx serve dist/public",
     "clean": "rimraf dist",
     "test": "vitest run"
   },
   "license": "ISC",
   "devDependencies": {
-    "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
+    "esbuild": "^0.27.3",
     "rimraf": "^6.1.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
-  },
-  "dependencies": {
-    "express": "^5.2.1"
   }
 }
