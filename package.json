@@ -4,16 +4,22 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "build": "npm run clean && tsc",
-    "start": "node dist/main.js",
+    "build": "npm run clean && tsc && npm run copy-public",
+    "copy-public": "cp -r src/public dist/public",
+    "start": "node dist/server.js",
+    "demo": "node dist/main.js",
     "clean": "rimraf dist",
     "test": "vitest run"
   },
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
     "rimraf": "^6.1.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

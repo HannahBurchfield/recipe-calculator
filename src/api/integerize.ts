@@ -23,11 +23,11 @@ export function integerize(chain: ProductionChain, tolerance = DEFAULT_TOLERANCE
     count: Math.round(node.count * bestK),
   }));
 
-  // Rebuild edges pointing to the new node objects
-  const nodeMap = new Map(chain.nodes.map((old, i) => [old, newNodes[i]!]));
+  // Rebuild edges pointing to the new node objects (match by recipe name, not reference)
+  const nodeByName = new Map(newNodes.map((n) => [n.recipe.name, n]));
   const newEdges = chain.edges.map((edge) => ({
-    from: nodeMap.get(edge.from)!,
-    to: nodeMap.get(edge.to)!,
+    from: nodeByName.get(edge.from.recipe.name)!,
+    to: nodeByName.get(edge.to.recipe.name)!,
     product: edge.product,
   }));
 

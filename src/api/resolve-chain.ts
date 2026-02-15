@@ -23,20 +23,18 @@ export function resolveChain(
 
     // Merge into existing node if this recipe was already resolved
     const existing = nodeByRecipe.get(recipe.name);
-    if (existing) {
-      existing.count += count;
-      return existing;
+    const node = existing ?? { recipe, count: 0 };
+    if (!existing) {
+      nodes.push(node);
+      nodeByRecipe.set(recipe.name, node);
     }
+    node.count += count;
 
-    const node: ChainNode = { recipe, count };
-    nodes.push(node);
-    nodeByRecipe.set(recipe.name, node);
-
-    // Recurse into inputs
+    // Always recurse into inputs so upstream counts stay correct
     for (const input of recipe.inputs) {
       const inputRate = (input.quantity / recipe.duration) * count;
       const upstream = resolve(input.product, inputRate);
-      if (upstream) {
+      if (upstream && !existing) {
         edges.push({ from: upstream, to: node, product: input.product });
       }
     }

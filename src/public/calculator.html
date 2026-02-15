@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.4/cytoscape.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; max-width: 1100px; margin: 0 auto; padding: 1rem; background: #f5f5f5; }
+    h1 { margin-bottom: 1rem; }
+    h2 { margin: 1rem 0 0.5rem; }
+    section { background: #fff; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; border: 1px solid #ddd; }
+    label { font-weight: 600; margin-right: 0.5rem; }
+    input, select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 4px 12px; border: 1px solid #999; border-radius: 4px; background: #fff; cursor: pointer; }
+    button:hover { background: #eee; }
+    button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    button.primary:hover { background: #1d4ed8; }
+    .row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    #graph { width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 4px; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
+    .node-line { color: #9cdcfe; }
+    .edge-line { color: #808080; }
+    .throughput-pos { color: #4ec9b0; }
+    .throughput-neg { color: #f44747; }
+    .section-header { color: #c586c0; font-weight: bold; }
+    details { margin-top: 0.5rem; }
+    summary { cursor: pointer; font-weight: 600; color: #555; }
+  </style>
+</head>
+<body>
+  <nav style="margin-bottom:1rem"><a href="/">Editor</a> | <strong>Calculator</strong></nav>
+  <h1>Production Calculator</h1>
+
+  <section>
+    <div class="row">
+      <label>Book:</label>
+      <select id="bookSelect"><option value="">-- select --</option></select>
+      <button onclick="loadBook()">Load</button>
+    </div>
+    <div class="row">
+      <label>Target product:</label>
+      <select id="productSelect" disabled><option value="">-- load a book --</option></select>
+    </div>
+    <div class="row">
+      <label>Throughput (items/s):</label>
+      <input id="throughput" type="number" min="0.01" step="0.01" value="1" style="width:100px">
+    </div>
+    <div class="row">
+      <button class="primary" onclick="resolve()">Resolve Chain</button>
+      <button onclick="integerize()">Integerize</button>
+    </div>
+    <div class="row">
+      <label>Layout:</label>
+      <select id="layoutSelect" onchange="relayout()">
+        <option value="cose">Physics</option>
+        <option value="breadthfirst">Hierarchical</option>
+      </select>
+    </div>
+  </section>
+
+  <section>
+    <h2>Graph</h2>
+    <div id="graph"></div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Text Output</summary>
+      <pre id="output">Select a book and product, then click Resolve Chain.</pre>
+    </details>
+  </section>
+
+  <script>
+    let currentBook = null;
+    let currentBookName = '';
+    let lastChain = null;
+    let cy = null;
+
+    function initGraph() {
+      cy = cytoscape({
+        container: document.getElementById('graph'),
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-wrap': 'wrap',
+              'text-max-width': '140px',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-size': '11px',
+              'background-color': 'data(color)',
+              'border-width': 2,
+              'border-color': '#666',
+              'width': 'label',
+              'height': 'label',
+              'padding': '12px',
+              'shape': 'round-rectangle',
+            },
+          },
+          {
+            selector: 'edge',
+            style: {
+              'label': 'data(label)',
+              'font-size': '10px',
+              'text-background-color': '#fff',
+              'text-background-opacity': 1,
+              'text-background-padding': '2px',
+              'width': 2,
+              'line-color': '#999',
+              'target-arrow-color': '#999',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'arrow-scale': 1.2,
+            },
+          },
+        ],
+        layout: { name: 'grid' },
+        elements: [],
+      });
+    }
+
+    function renderGraph(chain) {
+      if (!cy) initGraph();
+      cy.elements().remove();
+
+      const elements = [];
+
+      for (const node of chain.nodes) {
+        const count = Number.isInteger(node.count) ? node.count : node.count.toFixed(2);
+        const isSource = node.recipe.inputs.length === 0;
+        elements.push({
+          group: 'nodes',
+          data: {
+            id: node.recipe.name,
+            label: `${count}x\n${node.recipe.name}`,
+            color: isSource ? '#d1fae5' : '#dbeafe',
+          },
+        });
+      }
+
+      for (let i = 0; i < chain.edges.length; i++) {
+        const edge = chain.edges[i];
+        elements.push({
+          group: 'edges',
+          data: {
+            id: `e${i}`,
+            source: edge.from.recipe.name,
+            target: edge.to.recipe.name,
+            label: edge.product.name,
+          },
+        });
+      }
+
+      cy.add(elements);
+      relayout();
+    }
+
+    function getLayoutOptions() {
+      const name = document.getElementById('layoutSelect').value;
+      if (name === 'breadthfirst') {
+        return {
+          name: 'breadthfirst',
+          directed: true,
+          roots: cy.nodes().filter(n => n.indegree() === 0),
+          spacingFactor: 1.2,
+          animate: true,
+          animationDuration: 400,
+          nodeDimensionsIncludeLabels: true,
+        };
+      }
+      return {
+        name: 'cose',
+        animate: true,
+        animationDuration: 400,
+        nodeRepulsion: () => 8000,
+        idealEdgeLength: () => 120,
+        gravity: 0.3,
+        numIter: 500,
+        nodeDimensionsIncludeLabels: true,
+      };
+    }
+
+    function relayout() {
+      if (!cy || cy.nodes().length === 0) return;
+      cy.layout(getLayoutOptions()).run();
+    }
+
+    async function refreshBookList() {
+      const res = await fetch('/api/books');
+      const names = await res.json();
+      const sel = document.getElementById('bookSelect');
+      sel.innerHTML = '<option value="">-- select --</option>';
+      for (const n of names) {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function loadBook() {
+      const name = document.getElementById('bookSelect').value;
+      if (!name) return;
+      const res = await fetch(`/api/books/${encodeURIComponent(name)}`);
+      if (!res.ok) { setOutput('Book not found.'); return; }
+      currentBook = await res.json();
+      currentBookName = name;
+      const sel = document.getElementById('productSelect');
+      sel.disabled = false;
+      sel.innerHTML = '';
+      for (const p of currentBook.products) {
+        const opt = document.createElement('option');
+        opt.value = p.name; opt.textContent = p.name;
+        sel.appendChild(opt);
+      }
+      setOutput(`Loaded "${name}" — ${currentBook.products.length} products, ${currentBook.recipes.length} recipes.`);
+    }
+
+    async function resolve() {
+      const productName = document.getElementById('productSelect').value;
+      if (!currentBookName || !productName) { setOutput('Select a book and product first.'); return; }
+      const throughput = parseFloat(document.getElementById('throughput').value) || undefined;
+
+      const res = await fetch('/api/resolve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookName: currentBookName, productName, throughput }),
+      });
+      if (!res.ok) { setOutput('Error: ' + (await res.json()).error); return; }
+      lastChain = await res.json();
+      renderGraph(lastChain);
+      await displayChain(lastChain, `Resolved chain for ${productName}` + (throughput ? ` @ ${throughput}/s` : ''));
+    }
+
+    async function integerize() {
+      if (!lastChain) { setOutput('Resolve a chain first.'); return; }
+      const res = await fetch('/api/integerize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lastChain),
+      });
+      if (!res.ok) { setOutput('Error integerizing.'); return; }
+      lastChain = await res.json();
+      renderGraph(lastChain);
+      await displayChain(lastChain, 'Integerized chain');
+    }
+
+    async function displayChain(chain, title) {
+      let html = `<span class="section-header">=== ${esc(title)} ===</span>\n\n`;
+
+      html += `<span class="section-header">Constructors:</span>\n`;
+      for (const node of chain.nodes) {
+        const count = Number.isInteger(node.count) ? node.count : node.count.toFixed(2);
+        const inputs = node.recipe.inputs.map(i => `${i.quantity}x ${i.product.name}`).join(', ') || '(source)';
+        const outputs = node.recipe.outputs.map(o => `${o.quantity}x ${o.product.name}`).join(', ');
+        html += `<span class="node-line">  ${count}x ${esc(node.recipe.name)}</span>`;
+        html += `  <span class="edge-line">[${esc(inputs)} → ${esc(outputs)}, ${node.recipe.duration}s]</span>\n`;
+      }
+
+      html += `\n<span class="section-header">Connections:</span>\n`;
+      for (const edge of chain.edges) {
+        html += `<span class="edge-line">  ${esc(edge.from.recipe.name)} → ${esc(edge.to.recipe.name)}  (${esc(edge.product.name)})</span>\n`;
+      }
+
+      const tRes = await fetch('/api/throughput', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chain, bookName: currentBookName }),
+      });
+      if (tRes.ok) {
+        const throughputs = await tRes.json();
+        html += `\n<span class="section-header">Net throughput (items/s):</span>\n`;
+        for (const [name, rate] of Object.entries(throughputs)) {
+          const cls = rate > 0 ? 'throughput-pos' : 'throughput-neg';
+          const sign = rate > 0 ? '+' : '';
+          html += `<span class="${cls}">  ${esc(name)}: ${sign}${Number(rate).toFixed(4)}/s</span>\n`;
+        }
+      }
+
+      document.getElementById('output').innerHTML = html;
+    }
+
+    function setOutput(text) {
+      document.getElementById('output').textContent = text;
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    refreshBookList();
+    initGraph();
+  </script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 0 auto; padding: 1rem; background: #f5f5f5; }
+    h1 { margin-bottom: 1rem; }
+    h2 { margin: 1rem 0 0.5rem; }
+    section { background: #fff; padding: 1rem; margin-bottom: 1rem; border-radius: 6px; border: 1px solid #ddd; }
+    label { font-weight: 600; margin-right: 0.5rem; }
+    input, select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 4px 12px; border: 1px solid #999; border-radius: 4px; background: #fff; cursor: pointer; }
+    button:hover { background: #eee; }
+    button.danger { color: #c00; border-color: #c00; }
+    button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    button.primary:hover { background: #1d4ed8; }
+    .row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+    .product-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .product-chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.75rem; background: #e0e7ff; border: 1px solid #a5b4fc; border-radius: 999px; font-size: 0.9rem; }
+    .product-chip.has-recipe { background: #dbeafe; border-color: #60a5fa; }
+    .product-chip.no-recipe { background: #fef3c7; border-color: #f59e0b; }
+    .product-chip.clickable { cursor: pointer; }
+    .product-chip.clickable:hover { filter: brightness(0.9); }
+    .product-chip button { border: none; background: none; color: #6366f1; font-weight: bold; cursor: pointer; padding: 0 2px; font-size: 1rem; }
+    .product-chip button:hover { color: #c00; background: none; }
+    .recipe-card { border: 1px solid #ddd; border-radius: 4px; padding: 0.75rem; margin-bottom: 0.5rem; background: #fafafa; }
+    .recipe-title { font-weight: 600; color: #555; margin-bottom: 0.25rem; font-size: 0.85rem; }
+    .io-row { display: flex; gap: 0.5rem; align-items: center; margin: 0.25rem 0; }
+    #status { padding: 0.5rem; color: #059669; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <nav style="margin-bottom:1rem"><strong>Editor</strong> | <a href="/calculator.html">Calculator</a></nav>
+  <h1>Recipe Calculator</h1>
+
+  <!-- Book management -->
+  <section>
+    <h2>Recipe Book</h2>
+    <div class="row">
+      <label>Load:</label>
+      <select id="bookSelect"><option value="">-- select --</option></select>
+      <button onclick="loadBook()">Load</button>
+      <button class="danger" onclick="deleteBook()">Delete</button>
+    </div>
+    <div class="row">
+      <label>Name:</label>
+      <input id="bookName" placeholder="my-book">
+      <button class="primary" onclick="saveBook()">Save</button>
+    </div>
+    <div id="status"></div>
+  </section>
+
+  <!-- Products -->
+  <section>
+    <h2>Products</h2>
+    <p style="color:#666; font-size:0.85rem; margin-bottom:0.5rem">Define all products first. Recipes reference these.</p>
+    <div id="productList" class="product-grid"></div>
+    <div class="row">
+      <input id="newProduct" placeholder="product name" onkeydown="if(event.key==='Enter')addProduct()">
+      <button onclick="addProduct()">Add</button>
+    </div>
+  </section>
+
+  <!-- Recipes -->
+  <section>
+    <h2>Recipes</h2>
+    <div id="recipeList"></div>
+    <button onclick="addRecipe()">+ Add Recipe</button>
+  </section>
+
+  <!-- Product summary -->
+  <section>
+    <h2>Product Summary</h2>
+    <div id="productSummary" class="product-grid"></div>
+  </section>
+
+  <script>
+    let products = [];
+    let recipes = [];
+
+    // --- Auto-name recipes from their IO ---
+    function recipeName(r) {
+      const outs = r.outputs.map(o => o.product).join(' + ');
+      if (r.inputs.length === 0) return outs ? `${outs} (source)` : '(empty)';
+      const ins = r.inputs.map(i => i.product).join(' + ');
+      return `${ins} → ${outs}` || '(empty)';
+    }
+
+    // --- Book management ---
+
+    async function refreshBookList() {
+      const res = await fetch('/api/books');
+      const names = await res.json();
+      const sel = document.getElementById('bookSelect');
+      sel.innerHTML = '<option value="">-- select --</option>';
+      for (const n of names) {
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      }
+    }
+
+    async function loadBook() {
+      const name = document.getElementById('bookSelect').value;
+      if (!name) return;
+      const res = await fetch(`/api/books/${encodeURIComponent(name)}`);
+      if (!res.ok) { status('Book not found'); return; }
+      const book = await res.json();
+      document.getElementById('bookName').value = name;
+      products = book.products.map(p => p.name);
+      recipes = book.recipes.map(r => ({
+        duration: r.duration,
+        inputs: r.inputs.map(i => ({ product: i.product.name, quantity: i.quantity })),
+        outputs: r.outputs.map(o => ({ product: o.product.name, quantity: o.quantity })),
+      }));
+      renderProducts();
+      renderRecipes();
+      status(`Loaded "${name}"`);
+    }
+
+    async function saveBook() {
+      const name = document.getElementById('bookName').value.trim();
+      if (!name) { status('Enter a book name'); return; }
+      const book = {
+        products: products.map(n => ({ name: n })),
+        recipes: recipes.map(r => ({
+          name: recipeName(r),
+          duration: r.duration,
+          inputs: r.inputs.map(i => ({ product: { name: i.product }, quantity: i.quantity })),
+          outputs: r.outputs.map(o => ({ product: { name: o.product }, quantity: o.quantity })),
+        })),
+      };
+      await fetch(`/api/books/${encodeURIComponent(name)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(book),
+      });
+      await refreshBookList();
+      status(`Saved "${name}"`);
+    }
+
+    async function deleteBook() {
+      const name = document.getElementById('bookSelect').value;
+      if (!name || !confirm(`Delete "${name}"?`)) return;
+      await fetch(`/api/books/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      await refreshBookList();
+      products = []; recipes = [];
+      renderProducts(); renderRecipes();
+      status(`Deleted "${name}"`);
+    }
+
+    function status(msg) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      setTimeout(() => el.textContent = '', 3000);
+    }
+
+    // --- Products ---
+
+    function addProduct() {
+      const input = document.getElementById('newProduct');
+      const name = input.value.trim();
+      if (!name || products.includes(name)) return;
+      products.push(name);
+      input.value = '';
+      renderProducts();
+      renderRecipes();
+    }
+
+    function removeProduct(i) {
+      products.splice(i, 1);
+      renderProducts();
+      renderRecipes();
+    }
+
+    function renderProducts() {
+      const el = document.getElementById('productList');
+      el.innerHTML = '';
+      products.forEach((p, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'product-chip';
+        chip.innerHTML = `${esc(p)} <button onclick="removeProduct(${i})">&times;</button>`;
+        el.appendChild(chip);
+      });
+    }
+
+    // --- Recipes ---
+
+    function addRecipe(outputProduct) {
+      const r = { duration: 1, inputs: [{ product: products[0] || '', quantity: 1 }], outputs: [] };
+      if (outputProduct) {
+        r.outputs.push({ product: outputProduct, quantity: 1 });
+      }
+      recipes.push(r);
+      renderRecipes();
+      // Scroll to and focus the first input select of the new recipe
+      const cards = document.querySelectorAll('.recipe-card');
+      const last = cards[cards.length - 1];
+      if (last) {
+        last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const sel = last.querySelector('.io-row select');
+        if (sel) sel.focus();
+      }
+    }
+
+    function removeRecipe(i) {
+      recipes.splice(i, 1);
+      renderRecipes();
+    }
+
+    function addIO(ri, type) {
+      recipes[ri][type].push({ product: products[0] || '', quantity: 1 });
+      renderRecipes();
+    }
+
+    function removeIO(ri, type, ii) {
+      recipes[ri][type].splice(ii, 1);
+      renderRecipes();
+    }
+
+    function renderRecipes() {
+      const el = document.getElementById('recipeList');
+      el.innerHTML = '';
+      recipes.forEach((r, ri) => {
+        const card = document.createElement('div');
+        card.className = 'recipe-card';
+
+        // Auto-generated title + controls
+        card.innerHTML = `
+          <div class="recipe-title">${esc(recipeName(r))}</div>
+          <div class="row">
+            <label>Duration (s):</label>
+            <input type="number" min="0.01" step="0.01" value="${r.duration}"
+              onchange="recipes[${ri}].duration=+this.value" style="width:80px">
+            <button class="danger" onclick="removeRecipe(${ri})">Remove</button>
+          </div>
+        `;
+
+        // Inputs
+        const inputsDiv = document.createElement('div');
+        inputsDiv.innerHTML = '<strong>Inputs:</strong>';
+        r.inputs.forEach((io, ii) => {
+          inputsDiv.innerHTML += ioRow(ri, 'inputs', ii, io);
+        });
+        inputsDiv.innerHTML += `<button onclick="addIO(${ri},'inputs')">+ input</button>`;
+        card.appendChild(inputsDiv);
+
+        // Outputs
+        const outputsDiv = document.createElement('div');
+        outputsDiv.innerHTML = '<strong>Outputs:</strong>';
+        r.outputs.forEach((io, ii) => {
+          outputsDiv.innerHTML += ioRow(ri, 'outputs', ii, io);
+        });
+        outputsDiv.innerHTML += `<button onclick="addIO(${ri},'outputs')">+ output</button>`;
+        card.appendChild(outputsDiv);
+
+        el.appendChild(card);
+      });
+      renderProductSummary();
+    }
+
+    function ioRow(ri, type, ii, io) {
+      const opts = products.map(p =>
+        `<option value="${esc(p)}" ${p === io.product ? 'selected' : ''}>${esc(p)}</option>`
+      ).join('');
+      return `<div class="io-row">
+        <select onchange="recipes[${ri}].${type}[${ii}].product=this.value">${opts}</select>
+        <input type="number" min="1" value="${io.quantity}" style="width:60px"
+          onchange="recipes[${ri}].${type}[${ii}].quantity=+this.value">
+        <button class="danger" onclick="removeIO(${ri},'${type}',${ii})">x</button>
+      </div>`;
+    }
+
+    function renderProductSummary() {
+      const el = document.getElementById('productSummary');
+      el.innerHTML = '';
+      const produced = new Set();
+      for (const r of recipes) {
+        for (const o of r.outputs) produced.add(o.product);
+      }
+      products.forEach(p => {
+        const chip = document.createElement('span');
+        chip.className = 'product-chip clickable ' + (produced.has(p) ? 'has-recipe' : 'no-recipe');
+        chip.textContent = p;
+        chip.title = 'Click to add recipe for ' + p;
+        chip.onclick = () => addRecipe(p);
+        el.appendChild(chip);
+      });
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // Init
+    refreshBookList();
+  </script>
+</body>
+</html>
