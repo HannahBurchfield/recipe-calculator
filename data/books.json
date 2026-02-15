@@ -1,0 +1,1439 @@
+{
+  "rogue-factory": {
+    "products": [
+      {
+        "name": "spiritus"
+      },
+      {
+        "name": "icicle"
+      },
+      {
+        "name": "ice spike"
+      },
+      {
+        "name": "corpus"
+      },
+      {
+        "name": "seismic shockwave"
+      },
+      {
+        "name": "arrow"
+      },
+      {
+        "name": "fire arrow"
+      },
+      {
+        "name": "fire ball"
+      },
+      {
+        "name": "anima"
+      },
+      {
+        "name": "arctic ray"
+      },
+      {
+        "name": "ball lightning"
+      },
+      {
+        "name": "attack potion"
+      },
+      {
+        "name": "blaze barrage"
+      },
+      {
+        "name": "blizzard"
+      },
+      {
+        "name": "bomb"
+      },
+      {
+        "name": "boomerang"
+      },
+      {
+        "name": "bubble"
+      },
+      {
+        "name": "burning column"
+      },
+      {
+        "name": "cannonball"
+      },
+      {
+        "name": "chrysopoeia"
+      },
+      {
+        "name": "chrysopoeia II"
+      },
+      {
+        "name": "chrysopoeia III"
+      },
+      {
+        "name": "crossbow bolt"
+      },
+      {
+        "name": "death's scythe"
+      },
+      {
+        "name": "defense potion"
+      },
+      {
+        "name": "earthquake"
+      },
+      {
+        "name": "electric bolt"
+      },
+      {
+        "name": "ember staff"
+      },
+      {
+        "name": "eye of newt"
+      },
+      {
+        "name": "feather of crow"
+      },
+      {
+        "name": "fin of shark"
+      },
+      {
+        "name": "fire whirl"
+      },
+      {
+        "name": "firewall"
+      },
+      {
+        "name": "flamethrower"
+      },
+      {
+        "name": "force field"
+      },
+      {
+        "name": "frost axe"
+      },
+      {
+        "name": "frozen ground"
+      },
+      {
+        "name": "gas cloud"
+      },
+      {
+        "name": "head of mantis"
+      },
+      {
+        "name": "health potion"
+      },
+      {
+        "name": "ice shards"
+      },
+      {
+        "name": "ice volley"
+      },
+      {
+        "name": "inferno"
+      },
+      {
+        "name": "javelin"
+      },
+      {
+        "name": "luck potion"
+      },
+      {
+        "name": "magnum opus"
+      },
+      {
+        "name": "meteor"
+      },
+      {
+        "name": "poison bubble"
+      },
+      {
+        "name": "poison dart"
+      },
+      {
+        "name": "snowball"
+      },
+      {
+        "name": "spear"
+      },
+      {
+        "name": "speed potion"
+      },
+      {
+        "name": "static charge"
+      },
+      {
+        "name": "sword strike"
+      },
+      {
+        "name": "tooth of rat"
+      },
+      {
+        "name": "voltaic hammer"
+      }
+    ],
+    "recipes": [
+      {
+        "name": "spiritus (source)",
+        "duration": 0.5,
+        "inputs": [],
+        "outputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus (source)",
+        "duration": 0.5,
+        "inputs": [],
+        "outputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus → icicle",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus → ice spike",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ice spike"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus + corpus → seismic shockwave",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "seismic shockwave"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "anima (source)",
+        "duration": 0.5,
+        "inputs": [],
+        "outputs": [
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "anima → fire ball",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "arrow + fire ball → fire arrow",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "fire arrow"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus → arrow",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "ice volley → arctic ray",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "ice volley"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "arctic ray"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "anima + spiritus + corpus → attack potion",
+        "duration": 3.3333,
+        "inputs": [
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "attack potion"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "electric bolt → ball lightning",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "electric bolt"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ball lightning"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire whirl + fire ball → blaze barrage",
+        "duration": 3.333,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire whirl"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "blaze barrage"
+            },
+            "quantity": 3
+          }
+        ]
+      },
+      {
+        "name": "icicle + ice shards → blizzard",
+        "duration": 3.3333,
+        "inputs": [
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "ice shards"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "blizzard"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus + anima → bomb",
+        "duration": 5,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "bomb"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "crossbow bolt → boomerang",
+        "duration": 3.333333,
+        "inputs": [
+          {
+            "product": {
+              "name": "crossbow bolt"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "boomerang"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire ball + icicle → bubble",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "bubble"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire ball → burning column",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "burning column"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus → cannonball",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "cannonball"
+            },
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "name": "corpus + spiritus → chrysopoeia",
+        "duration": 3.33333,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 2
+          },
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "chrysopoeia"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "chrysopoeia + spiritus → chrysopoeia II",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "chrysopoeia"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "chrysopoeia II"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "chrysopoeia II → chrysopoeia III",
+        "duration": 3.33333,
+        "inputs": [
+          {
+            "product": {
+              "name": "chrysopoeia II"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "chrysopoeia III"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "arrow → crossbow bolt",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "crossbow bolt"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "poison bubble → death's scythe",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "poison bubble"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "death's scythe"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus + spiritus → defense potion",
+        "duration": 3.3333,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 2
+          },
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "defense potion"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "seismic shockwave → earthquake",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "seismic shockwave"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "earthquake"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus + fire ball → electric bolt",
+        "duration": 1.428,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "electric bolt"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire ball → ember staff",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ember staff"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "attack potion + spiritus → eye of newt",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "attack potion"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "eye of newt"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus + luck potion → feather of crow",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "luck potion"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "feather of crow"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "speed potion + anima → fin of shark",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "speed potion"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "fin of shark"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire ball → fire whirl",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "fire whirl"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "burning column → firewall",
+        "duration": 2.5,
+        "inputs": [
+          {
+            "product": {
+              "name": "burning column"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "firewall"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire whirl → flamethrower",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire whirl"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "flamethrower"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus + anima → force field",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "force field"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "icicle → frost axe",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "frost axe"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "ice shards + corpus → frozen ground",
+        "duration": 2.5,
+        "inputs": [
+          {
+            "product": {
+              "name": "ice shards"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "frozen ground"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "poison bubble → gas cloud",
+        "duration": 1.428,
+        "inputs": [
+          {
+            "product": {
+              "name": "poison bubble"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "gas cloud"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus + defense potion → head of mantis",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "defense potion"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "head of mantis"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "anima → health potion",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "health potion"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "icicle → ice shards",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ice shards"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus → ice spike",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ice spike"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "icicle → ice volley",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "icicle"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "ice volley"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "anima → inferno",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "anima"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "inferno"
+            },
+            "quantity": 2
+          }
+        ]
+      },
+      {
+        "name": "corpus + crossbow bolt → javelin",
+        "duration": 3.3333,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "crossbow bolt"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "javelin"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "corpus → luck potion",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "luck potion"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "attack potion + chrysopoeia → magnum opus",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "attack potion"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "chrysopoeia"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "magnum opus"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire whirl + corpus → meteor",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire whirl"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "meteor"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "fire ball + corpus → poison bubble",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "fire ball"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "poison bubble"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "arrow + poison bubble → poison dart",
+        "duration": 1.428,
+        "inputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "poison bubble"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "poison dart"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "ice shards → snowball",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "ice shards"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "snowball"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "arrow → spear",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "spear"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "spiritus → speed potion",
+        "duration": 3.33333,
+        "inputs": [
+          {
+            "product": {
+              "name": "spiritus"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "speed potion"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "electric bolt → static charge",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "electric bolt"
+            },
+            "quantity": 2
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "static charge"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "arrow → sword strike",
+        "duration": 2,
+        "inputs": [
+          {
+            "product": {
+              "name": "arrow"
+            },
+            "quantity": 3
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "sword strike"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "attack potion + corpus → tooth of rat",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "attack potion"
+            },
+            "quantity": 1
+          },
+          {
+            "product": {
+              "name": "corpus"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "tooth of rat"
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "name": "electric bolt → voltaic hammer",
+        "duration": 1,
+        "inputs": [
+          {
+            "product": {
+              "name": "electric bolt"
+            },
+            "quantity": 1
+          }
+        ],
+        "outputs": [
+          {
+            "product": {
+              "name": "voltaic hammer"
+            },
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "motor-factory": {
+    "products": [
+      { "name": "widget" },
+      { "name": "cog" },
+      { "name": "motor" }
+    ],
+    "recipes": [
+      {
+        "name": "mine widget",
+        "inputs": [],
+        "outputs": [{ "product": { "name": "widget" }, "quantity": 1 }],
+        "duration": 1
+      },
+      {
+        "name": "make cog",
+        "inputs": [{ "product": { "name": "widget" }, "quantity": 1 }],
+        "outputs": [{ "product": { "name": "cog" }, "quantity": 1 }],
+        "duration": 1
+      },
+      {
+        "name": "make motor",
+        "inputs": [
+          { "product": { "name": "widget" }, "quantity": 2 },
+          { "product": { "name": "cog" }, "quantity": 1 }
+        ],
+        "outputs": [{ "product": { "name": "motor" }, "quantity": 1 }],
+        "duration": 2
+      }
+    ]
+  }
+}
