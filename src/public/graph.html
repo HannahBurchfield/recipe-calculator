@@ -101,11 +101,15 @@
 
       for (const recipe of graph.nodes) {
         const isSource = recipe.inputs.length === 0;
+        const fmtStack = s => s.quantity === 1 ? s.product.name : `(${s.quantity}x ${s.product.name})`;
+        const inputs = recipe.inputs.map(fmtStack).join(' + ');
+        const outputs = recipe.outputs.map(fmtStack).join(' + ');
+        const label = isSource ? outputs + ' (source)' : inputs + ' → ' + outputs;
         elements.push({
           group: 'nodes',
           data: {
             id: recipe.name,
-            label: recipe.name,
+            label,
             color: isSource ? '#d1fae5' : '#dbeafe',
           },
         });
