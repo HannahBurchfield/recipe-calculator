@@ -24,11 +24,21 @@ function writeBooks(books: Record<string, RecipeBook>): void {
   writeFileSync(BOOKS_FILE, JSON.stringify(books, null, 2));
 }
 
+const LOCALHOST_IPS = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+function localhostOnly(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (LOCALHOST_IPS.has(req.ip ?? '')) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Admin-only: localhost access required' });
+  }
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.static(join(__dirname, 'public')));
 
-// List all books
+// List all preset books
 app.get('/api/books', (_req, res) => {
   const books = readBooks();
   res.json(Object.keys(books));
@@ -45,37 +55,37 @@ app.get('/api/books/:name', (req, res) => {
   res.json(book);
 });
 
-// Save/overwrite a book
-app.post('/api/books/:name', (req, res) => {
+// Save/overwrite a book (localhost only)
+app.post('/api/books/:name', localhostOnly, (req, res) => {
+  const name = req.params.name as string;
   const books = readBooks();
-  books[req.params.name] = req.body as RecipeBook;
+  books[name] = req.body as RecipeBook;
   writeBooks(books);
   res.json({ ok: true });
 });
 
-// Delete a book
-app.delete('/api/books/:name', (req, res) => {
+// Delete a book (localhost only)
+app.delete('/api/books/:name', localhostOnly, (req, res) => {
+  const name = req.params.name as string;
   const books = readBooks();
-  if (!(req.params.name in books)) {
+  if (!(name in books)) {
     res.status(404).json({ error: 'Book not found' });
     return;
   }
-  delete books[req.params.name];
+  delete books[name];
   writeBooks(books);
   res.json({ ok: true });
 });
 
-// Resolve a production chain
+// Resolve a production chain (accepts book inline)
 app.post('/api/resolve', (req, res) => {
-  const { bookName, productName, throughput } = req.body as {
-    bookName: string;
+  const { book, productName, throughput } = req.body as {
+    book: RecipeBook;
     productName: string;
     throughput?: number;
   };
-  const books = readBooks();
-  const book = books[bookName];
   if (!book) {
-    res.status(404).json({ error: 'Book not found' });
+    res.status(400).json({ error: 'Book data required' });
     return;
   }
   const product = book.products.find((p) => p.name === productName);
@@ -93,16 +103,14 @@ app.post('/api/integerize', (req, res) => {
   res.json(integerize(chain));
 });
 
-// Get throughput for all products in a chain
+// Get throughput for all products in a chain (accepts book inline)
 app.post('/api/throughput', (req, res) => {
-  const { chain, bookName } = req.body as {
+  const { chain, book } = req.body as {
     chain: import('./types/index.js').ProductionChain;
-    bookName: string;
+    book: RecipeBook;
   };
-  const books = readBooks();
-  const book = books[bookName];
   if (!book) {
-    res.status(404).json({ error: 'Book not found' });
+    res.status(400).json({ error: 'Book data required' });
     return;
   }
   const result: Record<string, number> = {};
@@ -113,12 +121,22 @@ app.post('/api/throughput', (req, res) => {
   res.json(result);
 });
 
-// Full production graph for a book
+// Full production graph for a preset book (by name)
 app.get('/api/graph/:name', (req, res) => {
   const books = readBooks();
   const book = books[req.params.name];
   if (!book) {
     res.status(404).json({ error: 'Book not found' });
+    return;
+  }
+  res.json(buildProductionGraph(book));
+});
+
+// Full production graph (accepts book inline)
+app.post('/api/graph', (req, res) => {
+  const book = req.body as RecipeBook;
+  if (!book?.recipes) {
+    res.status(400).json({ error: 'Book data required' });
     return;
   }
   res.json(buildProductionGraph(book));

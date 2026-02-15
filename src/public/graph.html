@@ -46,6 +46,11 @@
   <script>
     let cy = null;
 
+    // --- localStorage helpers ---
+    function getLocalBooks() {
+      try { return JSON.parse(localStorage.getItem('books') || '{}'); } catch { return {}; }
+    }
+
     function initGraph() {
       cy = cytoscape({
         container: document.getElementById('graph'),
@@ -164,21 +169,59 @@
     }
 
     async function refreshBookList() {
-      const res = await fetch('/api/books');
-      const names = await res.json();
+      let serverNames = [];
+      try {
+        const res = await fetch('/api/books');
+        serverNames = await res.json();
+      } catch {}
+      const localBooks = getLocalBooks();
+
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
-      for (const n of names) {
+      for (const n of serverNames) {
         const opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
+        opt.value = `preset:${n}`;
+        opt.textContent = `${n} (preset)`;
+        sel.appendChild(opt);
+      }
+      for (const n of Object.keys(localBooks)) {
+        const opt = document.createElement('option');
+        opt.value = `local:${n}`;
+        opt.textContent = n;
         sel.appendChild(opt);
       }
     }
 
+    function parseSelection() {
+      const val = document.getElementById('bookSelect').value;
+      if (!val) return null;
+      const [source, ...rest] = val.split(':');
+      return { source, name: rest.join(':') };
+    }
+
     async function loadGraph() {
-      const name = document.getElementById('bookSelect').value;
-      if (!name) return;
-      const res = await fetch(`/api/graph/${encodeURIComponent(name)}`);
+      const sel = parseSelection();
+      if (!sel) return;
+
+      let book;
+      if (sel.source === 'preset') {
+        // Use GET endpoint for presets
+        const res = await fetch(`/api/graph/${encodeURIComponent(sel.name)}`);
+        if (!res.ok) return;
+        const graph = await res.json();
+        renderGraph(graph);
+        return;
+      } else {
+        book = getLocalBooks()[sel.name];
+        if (!book) return;
+      }
+
+      // POST book data for local books
+      const res = await fetch('/api/graph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(book),
+      });
       if (!res.ok) return;
       const graph = await res.json();
       renderGraph(graph);

@@ -74,9 +74,13 @@
 
   <script>
     let currentBook = null;
-    let currentBookName = '';
     let lastChain = null;
     let cy = null;
+
+    // --- localStorage helpers ---
+    function getLocalBooks() {
+      try { return JSON.parse(localStorage.getItem('books') || '{}'); } catch { return {}; }
+    }
 
     function initGraph() {
       cy = cytoscape({
@@ -189,44 +193,69 @@
     }
 
     async function refreshBookList() {
-      const res = await fetch('/api/books');
-      const names = await res.json();
+      let serverNames = [];
+      try {
+        const res = await fetch('/api/books');
+        serverNames = await res.json();
+      } catch {}
+      const localBooks = getLocalBooks();
+
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
-      for (const n of names) {
+      for (const n of serverNames) {
         const opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
+        opt.value = `preset:${n}`;
+        opt.textContent = `${n} (preset)`;
+        sel.appendChild(opt);
+      }
+      for (const n of Object.keys(localBooks)) {
+        const opt = document.createElement('option');
+        opt.value = `local:${n}`;
+        opt.textContent = n;
         sel.appendChild(opt);
       }
     }
 
+    function parseSelection() {
+      const val = document.getElementById('bookSelect').value;
+      if (!val) return null;
+      const [source, ...rest] = val.split(':');
+      return { source, name: rest.join(':') };
+    }
+
     async function loadBook() {
-      const name = document.getElementById('bookSelect').value;
-      if (!name) return;
-      const res = await fetch(`/api/books/${encodeURIComponent(name)}`);
-      if (!res.ok) { setOutput('Book not found.'); return; }
-      currentBook = await res.json();
-      currentBookName = name;
-      const sel = document.getElementById('productSelect');
-      sel.disabled = false;
-      sel.innerHTML = '';
+      const sel = parseSelection();
+      if (!sel) return;
+
+      if (sel.source === 'preset') {
+        const res = await fetch(`/api/books/${encodeURIComponent(sel.name)}`);
+        if (!res.ok) { setOutput('Book not found.'); return; }
+        currentBook = await res.json();
+      } else {
+        currentBook = getLocalBooks()[sel.name];
+        if (!currentBook) { setOutput('Book not found.'); return; }
+      }
+
+      const psel = document.getElementById('productSelect');
+      psel.disabled = false;
+      psel.innerHTML = '';
       for (const p of currentBook.products) {
         const opt = document.createElement('option');
         opt.value = p.name; opt.textContent = p.name;
-        sel.appendChild(opt);
+        psel.appendChild(opt);
       }
-      setOutput(`Loaded "${name}" — ${currentBook.products.length} products, ${currentBook.recipes.length} recipes.`);
+      setOutput(`Loaded "${sel.name}" — ${currentBook.products.length} products, ${currentBook.recipes.length} recipes.`);
     }
 
     async function resolve() {
       const productName = document.getElementById('productSelect').value;
-      if (!currentBookName || !productName) { setOutput('Select a book and product first.'); return; }
+      if (!currentBook || !productName) { setOutput('Select a book and product first.'); return; }
       const throughput = parseFloat(document.getElementById('throughput').value) || undefined;
 
       const res = await fetch('/api/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookName: currentBookName, productName, throughput }),
+        body: JSON.stringify({ book: currentBook, productName, throughput }),
       });
       if (!res.ok) { setOutput('Error: ' + (await res.json()).error); return; }
       lastChain = await res.json();
@@ -267,7 +296,7 @@
       const tRes = await fetch('/api/throughput', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chain, bookName: currentBookName }),
+        body: JSON.stringify({ chain, book: currentBook }),
       });
       if (tRes.ok) {
         const throughputs = await tRes.json();

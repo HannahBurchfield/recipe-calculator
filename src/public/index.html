@@ -30,6 +30,7 @@
     .recipe-title { font-weight: 600; color: #555; margin-bottom: 0.25rem; font-size: 0.85rem; }
     .io-row { display: flex; gap: 0.5rem; align-items: center; margin: 0.25rem 0; }
     #status { padding: 0.5rem; color: #059669; font-weight: 600; }
+    .preset-badge { font-size: 0.75rem; color: #888; font-style: italic; margin-left: 0.25rem; }
   </style>
 </head>
 <body>
@@ -43,12 +44,13 @@
       <label>Load:</label>
       <select id="bookSelect"><option value="">-- select --</option></select>
       <button onclick="loadBook()">Load</button>
-      <button class="danger" onclick="deleteBook()">Delete</button>
+      <button id="deleteBtn" class="danger" onclick="deleteBook()">Delete</button>
+      <button id="duplicateBtn" onclick="duplicateBook()" style="display:none">Duplicate</button>
     </div>
     <div class="row">
       <label>Name:</label>
       <input id="bookName" placeholder="my-book">
-      <button class="primary" onclick="saveBook()">Save</button>
+      <button id="saveBtn" class="primary" onclick="saveBook()">Save</button>
     </div>
     <div id="status"></div>
   </section>
@@ -80,6 +82,23 @@
   <script>
     let products = [];
     let recipes = [];
+    let presetNames = new Set();
+    let isPreset = false;
+
+    // --- localStorage helpers ---
+    function getLocalBooks() {
+      try { return JSON.parse(localStorage.getItem('books') || '{}'); } catch { return {}; }
+    }
+    function saveLocalBook(name, book) {
+      const books = getLocalBooks();
+      books[name] = book;
+      localStorage.setItem('books', JSON.stringify(books));
+    }
+    function deleteLocalBook(name) {
+      const books = getLocalBooks();
+      delete books[name];
+      localStorage.setItem('books', JSON.stringify(books));
+    }
 
     // --- Auto-name recipes from their IO ---
     function recipeName(r) {
@@ -92,24 +111,58 @@
     // --- Book management ---
 
     async function refreshBookList() {
-      const res = await fetch('/api/books');
-      const names = await res.json();
+      // Fetch preset books from server
+      let serverNames = [];
+      try {
+        const res = await fetch('/api/books');
+        serverNames = await res.json();
+      } catch {}
+      presetNames = new Set(serverNames);
+
+      const localBooks = getLocalBooks();
       const sel = document.getElementById('bookSelect');
       sel.innerHTML = '<option value="">-- select --</option>';
-      for (const n of names) {
+
+      // Presets first
+      for (const n of serverNames) {
         const opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
+        opt.value = `preset:${n}`;
+        opt.textContent = `${n} (preset)`;
+        sel.appendChild(opt);
+      }
+      // Local books
+      for (const n of Object.keys(localBooks)) {
+        const opt = document.createElement('option');
+        opt.value = `local:${n}`;
+        opt.textContent = n;
         sel.appendChild(opt);
       }
     }
 
+    function parseSelection() {
+      const val = document.getElementById('bookSelect').value;
+      if (!val) return null;
+      const [source, ...rest] = val.split(':');
+      return { source, name: rest.join(':') };
+    }
+
     async function loadBook() {
-      const name = document.getElementById('bookSelect').value;
-      if (!name) return;
-      const res = await fetch(`/api/books/${encodeURIComponent(name)}`);
-      if (!res.ok) { status('Book not found'); return; }
-      const book = await res.json();
-      document.getElementById('bookName').value = name;
+      const sel = parseSelection();
+      if (!sel) return;
+
+      let book;
+      if (sel.source === 'preset') {
+        const res = await fetch(`/api/books/${encodeURIComponent(sel.name)}`);
+        if (!res.ok) { status('Book not found'); return; }
+        book = await res.json();
+        isPreset = true;
+      } else {
+        book = getLocalBooks()[sel.name];
+        if (!book) { status('Book not found'); return; }
+        isPreset = false;
+      }
+
+      document.getElementById('bookName').value = sel.name;
       products = book.products.map(p => p.name);
       recipes = book.recipes.map(r => ({
         duration: r.duration,
@@ -118,13 +171,19 @@
       }));
       renderProducts();
       renderRecipes();
-      status(`Loaded "${name}"`);
+      updatePresetUI();
+      status(`Loaded "${sel.name}"${isPreset ? ' (preset — read only)' : ''}`);
     }
 
-    async function saveBook() {
-      const name = document.getElementById('bookName').value.trim();
-      if (!name) { status('Enter a book name'); return; }
-      const book = {
+    function updatePresetUI() {
+      document.getElementById('saveBtn').disabled = isPreset;
+      document.getElementById('deleteBtn').style.display = isPreset ? 'none' : '';
+      document.getElementById('duplicateBtn').style.display = isPreset ? '' : 'none';
+      document.getElementById('bookName').readOnly = isPreset;
+    }
+
+    function buildBookData() {
+      return {
         products: products.map(n => ({ name: n })),
         recipes: recipes.map(r => ({
           name: recipeName(r),
@@ -133,21 +192,38 @@
           outputs: r.outputs.map(o => ({ product: { name: o.product }, quantity: o.quantity })),
         })),
       };
-      await fetch(`/api/books/${encodeURIComponent(name)}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(book),
-      });
-      await refreshBookList();
+    }
+
+    function saveBook() {
+      if (isPreset) { status('Cannot overwrite a preset book — use Duplicate'); return; }
+      const name = document.getElementById('bookName').value.trim();
+      if (!name) { status('Enter a book name'); return; }
+      saveLocalBook(name, buildBookData());
+      refreshBookList();
       status(`Saved "${name}"`);
     }
 
-    async function deleteBook() {
-      const name = document.getElementById('bookSelect').value;
-      if (!name || !confirm(`Delete "${name}"?`)) return;
-      await fetch(`/api/books/${encodeURIComponent(name)}`, { method: 'DELETE' });
-      await refreshBookList();
+    function deleteBook() {
+      const sel = parseSelection();
+      if (!sel || sel.source === 'preset') return;
+      if (!confirm(`Delete "${sel.name}"?`)) return;
+      deleteLocalBook(sel.name);
+      refreshBookList();
       products = []; recipes = [];
       renderProducts(); renderRecipes();
-      status(`Deleted "${name}"`);
+      status(`Deleted "${sel.name}"`);
+    }
+
+    function duplicateBook() {
+      const origName = document.getElementById('bookName').value.trim();
+      const newName = prompt('Name for the copy:', origName + ' (copy)');
+      if (!newName) return;
+      saveLocalBook(newName, buildBookData());
+      isPreset = false;
+      document.getElementById('bookName').value = newName;
+      updatePresetUI();
+      refreshBookList();
+      status(`Duplicated as "${newName}"`);
     }
 
     function status(msg) {
@@ -194,7 +270,6 @@
       }
       recipes.push(r);
       renderRecipes();
-      // Scroll to and focus the first input select of the new recipe
       const cards = document.querySelectorAll('.recipe-card');
       const last = cards[cards.length - 1];
       if (last) {
@@ -226,7 +301,6 @@
         const card = document.createElement('div');
         card.className = 'recipe-card';
 
-        // Auto-generated title + controls
         card.innerHTML = `
           <div class="recipe-title">${esc(recipeName(r))}</div>
           <div class="row">
@@ -237,7 +311,6 @@
           </div>
         `;
 
-        // Inputs
         const inputsDiv = document.createElement('div');
         inputsDiv.innerHTML = '<strong>Inputs:</strong>';
         r.inputs.forEach((io, ii) => {
@@ -246,7 +319,6 @@
         inputsDiv.innerHTML += `<button onclick="addIO(${ri},'inputs')">+ input</button>`;
         card.appendChild(inputsDiv);
 
-        // Outputs
         const outputsDiv = document.createElement('div');
         outputsDiv.innerHTML = '<strong>Outputs:</strong>';
         r.outputs.forEach((io, ii) => {
@@ -296,6 +368,8 @@
     }
 
     // Init
+    isPreset = false;
+    updatePresetUI();
     refreshBookList();
   </script>
 </body>
